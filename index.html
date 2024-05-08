@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<base target="_top">
+<meta http-equiv="content-type" charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vue@3.2/dist/vue.global.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+  <!-- vue 3 Datapicker css -->
+  <link rel="stylesheet" href="https://unpkg.com/@vuepic/vue-datepicker@latest/dist/main.css">
+
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+<style>
+    .dp__button {
+        display: none;
+    }
+    * {
+    	font-family:"游ゴシック Medium",YuGothic,YuGothicM,"Hiragino Kaku Gothic ProN","Hiragino Kaku Gothic Pro",メイリオ,Meiryo,sans-serif;
+      }
+    body {
+    	margin:0;
+    }
+    header {
+    	padding: 5px;
+    	background-color: #333;
+    	position: relative;
+    }
+    h2 {
+    	text-align:center;
+    	color: #fff;
+    	margin: 10px;
+    }
+    .btn-group>.btn, .btn-group-vertical>.btn {
+        float: none;
+        display: inline-block;
+    }
+    .btn-info {
+        color: #fff;
+        background-color: #333;
+        border-color: #FFF;
+    }
+    .btn-info:focus, .btn-info:active, .btn-info.active, .open>.dropdown-toggle.btn-info, .check {
+        color: #333;
+        background-color: #fff;
+        border: solid 2px #333;
+    }
+    .container {
+    	margin: 40px 0;
+    }
+    .form-group {
+        margin-bottom: 20px;
+    }
+    .use-span {
+    	width: 25%;
+    	font-size: 12px;
+    	padding: 6px;
+    	text-align: center;
+    }
+    .regist {
+    	background:red;
+    	border-color:red;
+    	width: 100%;
+    	padding: 20px 0;
+    	margin: 20px 0;
+    	color: #FFFFFF;
+    }
+    #error{
+        display:none;
+    }
+    #section { display: none; }
+    #family_count { display: none; }
+    .dp__input {
+        display: block;
+        
+        width: 100%;
+        height: 34px;
+        padding: 6px 12px;
+        padding-left: 24px;
+        font-size: 14px;
+        line-height: 1.42857143;
+        color: #555;
+        background-color: #fff;
+        background-image: none;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        -webkit-box-shadow: inset 0 1px 1px rgba(0,0,0,.075);
+        box-shadow: inset 0 1px 1px rgba(0,0,0,.075);
+        -webkit-transition: border-color ease-in-out .15s,-webkit-box-shadow ease-in-out .15s;
+        -o-transition: border-color ease-in-out .15s,box-shadow ease-in-out .15s;
+        transition: border-color ease-in-out .15s,box-shadow ease-in-out .15s;
+    }
+    .dp__action_buttons {
+        flex:auto;
+    }
+    input[type=radio] {
+        display: none;
+    }
+</style>
+</head>
+<body>
+<header>
+	<h2>カウンセリングシート</h2>
+</header>
+<section id="app">
+	<div class="container" id="bring">
+        <!-- <form id="apply"> -->
+
+            <!-- customer_name -->  
+            <div class="form-group">
+                <label>お客様名（カタカナ）</label>
+                <input v-model="name" type="text" name="customer_name" class="form-control" required>
+            </div> 
+
+            <!-- place -->
+            <div class="form-group">
+                <label>ご来店回数</label>
+                <div class="btn-group" style="width:100%;">
+                    <label class="btn btn-info" style="width: 49%;" for="first" :class="visitNumber === '初めて' ? 'check' : ''">
+                        <input value="初めて" type="radio" v-model="visitNumber" id="first">初めて
+                    </label>
+                    <label class="btn btn-info" style="width: 49%;" for="second" :class="visitNumber === '2回目以降' ? 'check' : ''">
+                        <input value="2回目以降" type="radio" v-model="visitNumber" id="second">2回目以降
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>性別</label>
+                <div class="btn-group" style="width:100%;">
+                    <label class="btn btn-info" style="width: 49%;" for="male" :class="gender === '男性' ? 'check' : ''">
+                        <input value="男性" type="radio" v-model="gender" id="male">男性
+                    </label>
+                    <label class="btn btn-info" style="width: 49%;" for="female" :class="gender === '女性' ? 'check' : ''">
+                        <input value="女性" type="radio" v-model="gender" id="female">女性
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>日々のスキンケアルーチン</label>
+                <div class="btn-group" style="width:100%;">
+                    <label class="btn btn-info" style="width: 49%;" for="ari" :class="Routine === 'あり' ? 'check' : ''">
+                        <input value="あり" type="radio" v-model="Routine" id="ari">あり
+                    </label>
+                    <label class="btn btn-info" style="width: 49%;" for="nasi" :class="Routine === 'なし' ? 'check' : ''">
+                        <input value="なし" type="radio" v-model="Routine" id="nasi">なし
+                    </label>
+                </div>
+            </div>
+
+<div class="form-group">
+    <label>飲酒・喫煙の有無</label>
+    <div class="btn-group" style="width:100%;">
+        <label class="btn btn-info" style="width: 100%;" :class="syoujou === '飲酒する' ? 'check' : ''" for="one">
+            <input name="drinking_smoking" value="飲酒する" type="radio" required v-model="syoujou" id="one">飲酒する
+        </label>
+        <label class="btn btn-info" style="width: 100%;" :class="syoujou === ' 喫煙する' ? 'check' : ''" for="two">
+            <input name="drinking_smoking" value=" 喫煙する" type="radio" required v-model="syoujou" id="two"> 喫煙する
+        </label>
+       <label class="btn btn-info" style="width: 100%;" :class="syoujou === '両方' ? 'check' : ''" for="for">
+            <input name="drinking_smoking" value="両方" type="radio" required v-model="syoujou" id="for">両方
+        </label>
+        <label class="btn btn-info" style="width: 100%;" :class="syoujou === 'どちらもしない' ? 'check' : ''" for="three">
+            <input name="drinking_smoking" value="どちらもしない" type="radio" required v-model="syoujou" id="three">どちらもしない
+        </label>
+                </div>
+            </div>
+
+<div class="form-group">
+    <label>利用したことがあるサロンの種類</label>
+    <div class="btn-group" style="width:100%;">
+        <label class="btn btn-info" style="width: 100%;" :class="keiken === 'フェイシャル専門' ? 'check' : ''" for="one1">
+            <input name="salon_experience" value="フェイシャル専門" type="radio" required v-model="keiken" id="one1">フェイシャル専門
+        </label>
+        <label class="btn btn-info" style="width: 100%;" :class="keiken === 'ボディケア専門' ? 'check' : ''" for="two2">
+            <input name="salon_experience" value="ボディケア専門" type="radio" required v-model="keiken" id="two2">ボディケア専門
+        </label>
+        <label class="btn btn-info" style="width: 100%;" :class="keiken === 'ヘアリムーバル専門' ? 'check' : ''" for="three3">
+            <input name="salon_experience" value="ヘアリムーバル専門" type="radio" required v-model="keiken" id="three3">ヘアリムーバル専門
+        </label>
+        <label class="btn btn-info" style="width: 100%;" :class="keiken === '総合エステ' ? 'check' : ''" for="four4">
+            <input name="salon_experience" value="総合エステ" type="radio" required v-model="keiken" id="four4">総合エステ
+        </label>
+        <label class="btn btn-info" style="width: 100%;" :class="keiken === 'その他' ? 'check' : ''" for="five5">
+            <input name="salon_experience" value="その他" type="radio" required v-model="keiken" id="five5">その他
+        </label>
+        <label class="btn btn-info" style="width: 100%;" :class="keiken === '経験なし' ? 'check' : ''" for="six6">
+            <input name="salon_experience" value="経験なし" type="radio" required v-model="keiken" id="six6">経験なし
+        </label>
+                </div>
+            </div>
+
+<div class="form-group">
+    <label>期待する結果</label>
+    <div class="btn-group" style="width:100%;">
+        <label class="btn btn-info" style="width: 100%;" :class="result === '肌の改善' ? 'check' : ''" for="one11">
+            <input name="salon_result" value="肌の改善" type="radio" required v-model="result" id="one11">肌の改善
+        </label>
+        <label class="btn btn-info" style="width: 100%;" :class="result === 'リラクゼーション ' ? 'check' : ''" for="two22">
+            <input name="salon_result" value="リラクゼーション " type="radio" required v-model="result" id="two22">リラクゼーション 
+        </label>
+        <label class="btn btn-info" style="width: 100%;" :class="result === 'ボディラインの改善 ' ? 'check' : ''" for="three33">
+            <input name="salon_result" value="ボディラインの改善 " type="radio" required v-model="result" id="three33">ボディラインの改善 
+        </label>
+        <label class="btn btn-info" style="width: 100%;" :class="result === 'その他' ? 'check' : ''" for="four44">
+            <input name="salon_result" value="その他" type="radio" required v-model="result" id="four44">その他
+        </label>
+    </div>
+</div>
+
+            <div class="form-group">
+                <label>メッセージ<small>（質問等お気軽にご記入ください）</small></label>
+                <textarea v-model="message" name="customer_message" class="form-control" required rows="6"></textarea>
+            </div>
+
+            <button type="submit" class="btn regist" v-on:click="done()" :disabled="keiken == '' || syoujou == '' || visitNumber == '' || gender == '' ">カウンセリングシートを送信</button>
+        <!-- </form> -->
+	</div>
+</section>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<!-- vue 3 Datapicker js -->
+<script src="https://unpkg.com/@vuepic/vue-datepicker@latest"></script>
+<script>
+  liff.init(
+    data => {
+      var userId = data.context.userId;
+      console.log(userId);
+    });
+</script>
+
+<script>
+    const app = {
+        data() {
+            return {
+                datepicker1: '',
+                datepicker2: '',
+                datepicker3: '',
+                datepicker1time: '',
+                datepicker2time: '',
+                datepicker3time: '',
+                visitNumber: "",
+                gender: "",
+                syoujou: [],
+                keiken: "",
+                Routine: "",
+                result: "",
+                message: ""
+            }
+        },
+        components: {
+            Datepicker: VueDatePicker
+        },
+        methods: {
+            get () {
+                let url = new URL(window.location.href);
+                let params = url.searchParams;
+
+                let syoujou = params.get('name');
+                this.syoujou = syoujou;
+            },
+            done () {
+                var date1 = new Date(this.datepicker1);
+                var date2 = new Date(this.datepicker2);
+                var date3 = new Date(this.datepicker3);
+
+                var datetime1 = date1.getFullYear() + "年" + (date1.getMonth() + 1) + "月" + date1.getDate() + "日 " + this.datepicker1time;
+                var datetime2 = date2.getFullYear() + "年" + (date2.getMonth() + 1) + "月" + date2.getDate() + "日 " + this.datepicker2time;
+                var datetime3 = date3.getFullYear() + "年" + (date3.getMonth() + 1) + "月" + date3.getDate() + "日 " + this.datepicker3time;
+
+                var date = "";
+
+                if (this.datepicker1 !== "" && this.datepicker1time !== ""){
+                    date = date + "\n" +  datetime1 
+                }
+                if (this.datepicker2 !== "" && this.datepicker2time !== ""){
+                    date = date + "\n" +  datetime2
+                }
+                if (this.datepicker3 !== "" && this.datepicker3time !== ""){
+                    date = date + "\n" +  datetime3
+                }
+
+               liff.sendMessages([
+    {
+      type: "text",
+      text: "【予約フォーム】" + "\n" + "お名前：" + this.name + "\n" + "ご来店回数：" + this.visitNumber + "\n" + "性別：" + this.gender + "\n" + "日々のスキンケアルーチン：" + this.number  + " + "\n" + "飲酒・喫煙の有無：" + this.name + " + "\n" + "利用したことがあるサロンの種類：" + this.name +" + "\n" + "期待する結果：" + this.name + "\n" + "メッセージ：" + this.message,
+    },
+  ])
+  .then(() => {
+    console.log("message sent");
+  })
+  .catch((err) => {
+    alert("error", err);
+  })
+  .finally(()=>{
+    liff.closeWindow();
+  });
+            },
+        },
+        mounted: async function(){
+            await liff.init({
+                liffId: "2004884799-AgYbJGv5"
+            }).then(()=>{
+                if (liff.isLoggedIn()) {
+                    console.log("ログイン済");
+                } else {
+                    liff.login();
+                }
+            });
+        },
+        created() {
+            this.get();
+        },
+        computed: {
+        }
+    }
+    Vue.createApp(app).mount('#bring')
+</script>
+
+</body>
+</html>
